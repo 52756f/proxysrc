@@ -13,10 +13,16 @@ import (
 	"time"
 )
 
+const (
+	address           = ":6666"
+	connectionTimeout = 60 * time.Second
+	readWriteTimeout  = 10 * time.Second
+)
+
 func main() {
 
 	// Create a listener
-	listener, err := net.Listen("tcp", ":6666")
+	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatalf("Fehler beim Starten des Servers: %v", err)
 	}
@@ -30,7 +36,7 @@ func main() {
 			continue
 		}
 		// Deadlines setzen
-		if err := conn.SetDeadline(time.Now().Add(60 * time.Second)); err != nil { // Beispiel: 10 Sekunden gesamt
+		if err := conn.SetDeadline(time.Now().Add(connectionTimeout)); err != nil { // Beispiel: 10 Sekunden gesamt
 			log.Println("Error setting deadline:", err)
 			conn.Close() // Wichtig: Verbindung schließen bei Fehler
 			return
@@ -89,14 +95,14 @@ func httpWorker(conn net.Conn, Data *Snippets.Income) {
 
 	address := net.JoinHostPort(host, strconv.Itoa(port))
 
-	remoteConn, err := net.DialTimeout("tcp", address, 30*time.Second)
+	remoteConn, err := net.DialTimeout("tcp", address, connectionTimeout)
 	if err != nil {
 		log.Printf("Fehler beim Verbinden mit %s: %v", address, err)
 		conn.Close()
 		return
 	}
 	defer remoteConn.Close()
-	remoteConn.SetDeadline(time.Now().Add(10 * time.Second))
+	remoteConn.SetDeadline(time.Now().Add(readWriteTimeout))
 	log.Println("---> HTTP Verbindung hergestellt zu", remoteConn.RemoteAddr())
 
 	// Send the request
@@ -126,14 +132,14 @@ func httpsWorker(conn net.Conn, Data *Snippets.Income) {
 	target := net.JoinHostPort(Data.Host, strconv.Itoa(Data.Port))
 
 	// Stelle eine Verbindung zum Ziel her
-	targetConn, err := net.DialTimeout("tcp", target, 30*time.Second)
+	targetConn, err := net.DialTimeout("tcp", target, connectionTimeout)
 	if err != nil {
 		log.Printf("Failed to connect to %s: %v", target, err)
 		Snippets.WriteResponse(conn, strconv.Itoa(http.StatusBadGateway), "") // Informiere den Client über den Fehler
 		return
 	}
 	defer targetConn.Close()
-	targetConn.SetDeadline(time.Now().Add(60 * time.Second))
+	targetConn.SetDeadline(time.Now().Add(connectionTimeout))
 	log.Println("---> HTTPS Verbindung hergestellt zu", targetConn.RemoteAddr())
 
 	// Sende die "200 Connection Established"-Antwort
