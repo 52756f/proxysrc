@@ -109,6 +109,7 @@ func httpWorker(conn net.Conn, Data *Snippets.Income) {
 	_, err = remoteConn.Write([]byte(newHeader))
 	if err != nil {
 		log.Printf("Fehler beim Senden der Anfrage: %v", err)
+		log.Print(Data)
 		remoteConn.Close()
 		return
 	}
@@ -117,6 +118,7 @@ func httpWorker(conn net.Conn, Data *Snippets.Income) {
 	_, err = io.Copy(conn, remoteConn)
 	if err != nil {
 		log.Printf("Fehler beim Kopieren der Antwort: %v", err)
+		log.Print(Data)
 	}
 }
 
@@ -181,10 +183,10 @@ func CreateHeader(Data *Snippets.Income) string {
 	request := ""
 	parts := strings.Split(Data.Header, "\n")
 	for _, val := range parts {
-		if strings.Contains(val, "Connection: keep-alive") {
+		/* if strings.Contains(val, "Connection: keep-alive") {
 			request += "Connection: close\r\n"
 			continue
-		}
+		} */
 		request += val + "\r\n"
 	}
 
